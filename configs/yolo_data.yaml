@@ -1,0 +1,14 @@
+# YOLOv8 数据集配置。
+# path 指向 Roboflow 或自建数据集导出的根目录，后续训练脚本会读取该文件。
+path: ../data/fatigue_yolo
+train: train/images
+val: valid/images
+test: test/images
+
+# 类别顺序必须和 Roboflow 导出的 labels 类别编号保持一致。
+# 当前数据集真实顺序为：0: 闭眼，1: 睁眼，2: 打哈欠。
+# 推理阶段会在疲劳规则中兼容 Eyeclosed/Eyeopen/Yawn 与项目内部命名。
+names:
+  0: Eyeclosed
+  1: Eyeopen
+  2: Yawn

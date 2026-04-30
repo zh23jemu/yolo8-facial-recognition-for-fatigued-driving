@@ -1,0 +1,39 @@
+# Python 缓存与虚拟环境
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 本地配置、密钥与环境变量
+.env
+.env.*
+*.local
+
+# 数据集、模型权重与训练输出通常体积较大，不纳入仓库
+data/*
+!data/.gitkeep
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/fatigue_yolo/.gitkeep
+!data/fatigue_sequence/.gitkeep
+weights/*
+!weights/.gitkeep
+runs/*
+!runs/.gitkeep
+
+# 日志、报告中间文件与导出结果
+*.log
+*.onnx
+*.pt
+*.pth
+*.engine
+*.mp4
+*.avi
+*.mov
+
+# IDE 与系统文件
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini
+
