@@ -23,6 +23,11 @@ runs/*
 
 # 日志、报告中间文件与导出结果
 *.log
+*.out
+*.err
+slurm-*.out
+slurm_logs/*
+!slurm_logs/.gitkeep
 *.onnx
 *.pt
 *.pth
@@ -36,4 +41,3 @@ runs/*
 .vscode/
 Thumbs.db
 Desktop.ini
-

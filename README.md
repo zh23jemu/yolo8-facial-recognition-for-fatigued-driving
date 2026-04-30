@@ -62,6 +62,18 @@ data/fatigue_yolo/
 .venv\Scripts\python.exe -m src.train.train_yolo --data configs/yolo_data.yaml --model yolov8n.pt --epochs 50
 ```
 
+服务器 Slurm GPU 节点训练：
+
+```bash
+sbatch scripts/slurm/train_yolo.sbatch
+```
+
+详细说明见：
+
+```text
+docs/server_slurm_training.md
+```
+
 图片/视频/摄像头推理：
 
 ```powershell
@@ -84,4 +96,3 @@ data/fatigue_yolo/
 - LSTM + Attention 时序模型骨架
 - PyQt5 桌面演示原型
 - 数据集、实验记录和运行说明模板
-
