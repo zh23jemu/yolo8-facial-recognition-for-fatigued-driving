@@ -1,6 +1,7 @@
 # YOLOv8 数据集配置。
-# path 指向 Roboflow 或自建数据集导出的根目录，后续训练脚本会读取该文件。
-path: ../data/fatigue_yolo
+# path 指向 Roboflow 或自建数据集导出的根目录。
+# 注意：训练脚本从项目根目录执行，因此这里使用项目根目录相对路径。
+path: data/fatigue_yolo
 train: train/images
 val: valid/images
 test: test/images
