@@ -128,3 +128,5 @@ docs/server_slurm_training.md
 - `docs/system_test_report.md`：桌面系统测试记录
 - `docs/defense_ppt_outline.md`：答辩 PPT 提纲
 - `docs/demo_guide.md`：系统演示与复现实验指南
+- `docs/defense_presentation.pptx`：答辩 PPT 初稿
+- `docs/defense_presentation_preview.png`：答辩 PPT 总览预览图

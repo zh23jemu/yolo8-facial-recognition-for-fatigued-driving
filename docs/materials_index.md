@@ -45,6 +45,8 @@
 | 系统测试记录 | `docs/system_test_report.md` | 写测试章节 |
 | 论文章节素材 | `docs/thesis_chapter_materials.md` | 写第 4、5、6 章 |
 | 答辩 PPT 提纲 | `docs/defense_ppt_outline.md` | 制作答辩 PPT |
+| 答辩 PPT 初稿 | `docs/defense_presentation.pptx` | 答辩展示与后续精修 |
+| PPT 总览预览图 | `docs/defense_presentation_preview.png` | 快速检查 PPT 页面布局 |
 | 演示指南 | `docs/demo_guide.md` | 答辩前复现演示 |
 
 ## 5. 系统截图
@@ -62,4 +64,3 @@
 - 引入 CBAM 注意力机制后，模型整体 mAP50 提升约 0.0233，mAP50-95 提升约 0.0102。
 - 打哈欠类别提升明显，Yawn 类别 mAP50 从约 0.693 提升到 0.762。
 - 系统已支持图片、视频、摄像头输入，并完成截图保存和日志记录。
-
