@@ -8,6 +8,7 @@ from typing import Iterable, List, Tuple
 import cv2
 
 from src.utils.fatigue_rules import FatigueRuleEvaluator, feature_from_detections
+from src.utils.ultralytics_patches import register_attention_modules
 
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
@@ -32,6 +33,7 @@ def load_model(weights: str):
     延迟导入可以让缺少依赖时的错误提示更清晰，也方便文档环境先进行静态检查。
     """
 
+    register_attention_modules()
     try:
         from ultralytics import YOLO
     except ImportError as exc:
@@ -161,4 +163,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

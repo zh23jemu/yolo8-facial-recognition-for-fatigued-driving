@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import (
 )
 
 from src.utils.fatigue_rules import FatigueRuleEvaluator, feature_from_detections
+from src.utils.ultralytics_patches import register_attention_modules
 
 
 STATE_TEXT = {
@@ -48,6 +49,7 @@ def parse_args() -> argparse.Namespace:
 def load_yolo(weights: str):
     """加载 YOLOv8 模型。"""
 
+    register_attention_modules()
     try:
         from ultralytics import YOLO
     except ImportError as exc:

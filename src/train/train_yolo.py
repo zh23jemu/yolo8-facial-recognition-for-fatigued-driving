@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from src.utils.ultralytics_patches import register_attention_modules
+
 
 def parse_args() -> argparse.Namespace:
     """解析 YOLOv8 训练参数。
@@ -13,6 +15,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="训练疲劳驾驶 YOLOv8 检测模型")
     parser.add_argument("--data", default="configs/yolo_data.yaml", help="YOLO 数据集配置文件路径")
     parser.add_argument("--model", default="yolov8n.pt", help="预训练模型或自定义模型配置")
+    parser.add_argument(
+        "--pretrained-weights",
+        default=None,
+        help="可选：当 --model 为自定义 yaml 时，用该权重进行迁移初始化，例如 yolov8n.pt",
+    )
     parser.add_argument("--epochs", type=int, default=50, help="训练轮数")
     parser.add_argument("--imgsz", type=int, default=640, help="输入图片尺寸")
     parser.add_argument("--batch", type=int, default=16, help="批大小")
@@ -36,6 +43,7 @@ def main() -> None:
     if not data_path.exists():
         raise FileNotFoundError(f"数据配置文件不存在：{data_path}")
 
+    register_attention_modules()
     try:
         from ultralytics import YOLO
     except ImportError as exc:
@@ -44,6 +52,10 @@ def main() -> None:
         ) from exc
 
     model = YOLO(args.model)
+    if args.pretrained_weights:
+        # 自定义注意力结构无法完全复用 YOLOv8n 权重，但相同层可迁移初始化。
+        # 这样比完全从零训练更稳定，也便于和 YOLOv8n 基线模型进行公平对比。
+        model.load(args.pretrained_weights)
     train_kwargs = {
         "data": str(data_path),
         "epochs": args.epochs,

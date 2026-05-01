@@ -132,8 +132,12 @@
 如果论文题目需要突出“注意力机制”改进效果，建议继续补充至少一组对比实验：
 
 1. **YOLOv8n 基线模型**：当前已完成，可作为 baseline。
-2. **YOLOv8n + 注意力机制模型**：建议加入 Coordinate Attention、SE 或 CBAM 中的一种，并在相同数据集、相同训练轮数下训练。
+2. **YOLOv8n + 注意力机制模型**：采用 YOLOv8n + CBAM，并在相同数据集、相同训练轮数下训练。
 3. **对比指标**：Precision、Recall、mAP50、mAP50-95、模型大小、推理速度。
 
-如果时间紧张，优先完成 `YOLOv8n + Coordinate Attention` 一组对比实验；如果实现风险较高，可用 `YOLOv8s` 作为结构复杂度对照，但论文中对“注意力机制”的支撑会弱一些。
+已新增训练脚本：
 
+- 短跑测试：`scripts/slurm/train_yolo_cbam_test.sbatch`
+- 正式训练：`scripts/slurm/train_yolo_cbam.sbatch`
+
+建议先提交短跑测试，确认自定义模型配置可训练后，再提交正式训练。
