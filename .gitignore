@@ -18,8 +18,16 @@ data/*
 !data/fatigue_sequence/.gitkeep
 weights/*
 !weights/.gitkeep
+!weights/best.pt
+!weights/best.onnx
 runs/*
 !runs/.gitkeep
+!runs/yolo/
+!runs/yolo/fatigue_yolov8n_slurm/
+!runs/yolo/fatigue_yolov8n_slurm/results.csv
+!runs/yolo/fatigue_yolov8n_slurm/confusion_matrix.png
+!runs/yolo/fatigue_yolov8n_slurm/PR_curve.png
+!runs/yolo/fatigue_yolov8n_slurm/F1_curve.png
 
 # 日志、报告中间文件与导出结果
 *.log
@@ -35,6 +43,14 @@ slurm_logs/*
 *.mp4
 *.avi
 *.mov
+
+# 允许保留本次毕业设计训练得到的核心模型与论文实验图。
+!weights/best.pt
+!weights/best.onnx
+!runs/yolo/fatigue_yolov8n_slurm/results.csv
+!runs/yolo/fatigue_yolov8n_slurm/confusion_matrix.png
+!runs/yolo/fatigue_yolov8n_slurm/PR_curve.png
+!runs/yolo/fatigue_yolov8n_slurm/F1_curve.png
 
 # IDE 与系统文件
 .idea/
