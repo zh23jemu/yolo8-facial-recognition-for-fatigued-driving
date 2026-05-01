@@ -1,15 +1,12 @@
-# Windows 本地演示专用依赖。
-# 用于没有本地 GPU 或 PyTorch DLL 加载失败时的稳定 CPU 推理环境。
-# 安装命令：
+# Windows local demo dependencies.
+# Use this CPU-only environment when local GPU is unavailable or PyTorch DLL loading fails.
+# Install commands:
 #   .venv\Scripts\python.exe -m pip uninstall -y torch torchvision torchaudio
 #   .venv\Scripts\python.exe -m pip install -r requirements-windows-cpu.txt
 
---index-url https://download.pytorch.org/whl/cpu
---extra-index-url https://pypi.org/simple
-
-torch==2.5.1+cpu
-torchvision==0.20.1+cpu
-torchaudio==2.5.1+cpu
+torch==2.5.1
+torchvision==0.20.1
+torchaudio==2.5.1
 
 ultralytics>=8.2.0
 opencv-python>=4.8.0
