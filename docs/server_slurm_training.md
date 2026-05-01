@@ -35,6 +35,24 @@ python3.11 -m venv .venv
 
 如果服务器没有 Python 3.11，可使用服务器提供的 Python 3.10 或管理员推荐版本，但仍需创建项目本地 `.venv`。
 
+如果 GPU 节点是 V100，且日志中出现 `torch.cuda.is_available(): False`，请改用服务器 CUDA 12.1 依赖：
+
+```bash
+.venv/bin/python -m pip uninstall -y torch torchvision torchaudio
+.venv/bin/python -m pip install -r requirements-server-cu121.txt
+```
+
+安装后验证：
+
+```bash
+.venv/bin/python - <<'PY'
+import torch
+print(torch.__version__)
+print(torch.cuda.is_available())
+print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CUDA 不可用")
+PY
+```
+
 ## 3. 检查数据配置
 
 训练配置文件：
@@ -123,4 +141,3 @@ cp runs/yolo/fatigue_yolov8n_slurm/weights/best.pt weights/best.pt
 ```
 
 确认数据路径、CUDA 和依赖没有问题后，再用 `sbatch` 跑 50 轮正式训练。
-

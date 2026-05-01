@@ -32,6 +32,12 @@ py -3.10 -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
+服务器 GPU 节点如果使用 V100，推荐安装服务器专用依赖：
+
+```bash
+.venv/bin/python -m pip install -r requirements-server-cu121.txt
+```
+
 ## 数据集放置
 
 大型数据集不提交到仓库。推荐目录：

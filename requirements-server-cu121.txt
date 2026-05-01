@@ -1,0 +1,21 @@
+# Slurm GPU 服务器专用依赖。
+# 当前服务器 GPU 为 V100，避免 pip 安装到过新的 cu130 轮子导致 torch.cuda.is_available() 为 False。
+# 安装命令：
+#   .venv/bin/python -m pip install -r requirements-server-cu121.txt
+
+--extra-index-url https://download.pytorch.org/whl/cu121
+
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
+torchaudio==2.5.1+cu121
+
+ultralytics>=8.2.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+PyQt5>=5.15.9
+onnx>=1.15.0
+onnxruntime>=1.16.0
+PyYAML>=6.0.1
+tqdm>=4.66.0
+matplotlib>=3.7.0
+

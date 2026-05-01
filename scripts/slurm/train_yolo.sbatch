@@ -49,12 +49,17 @@ fi
 # 训练前输出 GPU 与 Python 环境，便于论文实验记录和排查问题。
 nvidia-smi || true
 "${PYTHON_BIN}" - <<'PY'
+import sys
 import torch
 print("Torch:", torch.__version__)
 print("CUDA available:", torch.cuda.is_available())
 print("CUDA device count:", torch.cuda.device_count())
 if torch.cuda.is_available():
     print("CUDA device name:", torch.cuda.get_device_name(0))
+else:
+    print("错误：PyTorch 未能启用 CUDA。请检查服务器虚拟环境中的 torch CUDA 版本。")
+    print("建议重新安装：.venv/bin/python -m pip install -r requirements-server-cu121.txt")
+    sys.exit(1)
 PY
 
 # 正式训练命令。
@@ -71,4 +76,3 @@ PY
   --export-onnx
 
 echo "End Time: $(date)"
-

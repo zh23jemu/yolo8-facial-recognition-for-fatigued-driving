@@ -53,12 +53,17 @@ fi
 # 输出 GPU 与 PyTorch CUDA 状态，便于确认作业确实跑在 GPU 节点上。
 nvidia-smi || true
 "${PYTHON_BIN}" - <<'PY'
+import sys
 import torch
 print("Torch:", torch.__version__)
 print("CUDA available:", torch.cuda.is_available())
 print("CUDA device count:", torch.cuda.device_count())
 if torch.cuda.is_available():
     print("CUDA device name:", torch.cuda.get_device_name(0))
+else:
+    print("错误：PyTorch 未能启用 CUDA。请检查服务器虚拟环境中的 torch CUDA 版本。")
+    print("建议重新安装：.venv/bin/python -m pip install -r requirements-server-cu121.txt")
+    sys.exit(1)
 PY
 
 # 短跑训练：只跑 3 轮、小 batch、独立实验名，避免覆盖正式训练结果。
@@ -73,4 +78,3 @@ PY
   --name fatigue_yolov8n_slurm_test
 
 echo "Short test finished at: $(date)"
-
