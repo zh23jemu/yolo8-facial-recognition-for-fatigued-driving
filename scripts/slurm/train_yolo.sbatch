@@ -22,6 +22,13 @@
 
 set -euo pipefail
 
+# 限制常见数值库线程数，避免在 Slurm CPU 绑定环境里创建过多线程。
+# 这些设置不会影响 GPU 训练本身，但能减少 ONNX/NumPy/OpenMP 的线程亲和性警告。
+export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
+export MKL_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
+export OPENBLAS_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
+export NUMEXPR_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
+
 # 切换到提交 sbatch 时所在的项目目录。
 # 这样可以保证 configs、data、src 等相对路径都从仓库根目录解析。
 cd "${SLURM_SUBMIT_DIR}"

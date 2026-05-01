@@ -14,8 +14,10 @@ opencv-python>=4.8.0
 numpy>=1.24.0
 PyQt5>=5.15.9
 onnx>=1.15.0
-onnxruntime>=1.16.0
+# YOLO 导出 ONNX 时会检查 onnxslim 和 onnxruntime-gpu。
+# 提前安装可避免 Slurm 作业运行过程中触发 Ultralytics AutoUpdate。
+onnxslim>=0.1.71
+onnxruntime-gpu>=1.20.0
 PyYAML>=6.0.1
 tqdm>=4.66.0
 matplotlib>=3.7.0
-
