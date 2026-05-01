@@ -119,3 +119,12 @@ docs/server_slurm_training.md
 - LSTM + Attention 时序模型骨架
 - PyQt5 桌面演示原型
 - 数据集、实验记录和运行说明模板
+
+## 文档材料
+
+- `docs/materials_index.md`：毕业设计材料总索引
+- `docs/thesis_chapter_materials.md`：论文第 4、5、6 章写作素材
+- `docs/experiment_report.md`：YOLOv8n 与 YOLOv8n + CBAM 实验报告
+- `docs/system_test_report.md`：桌面系统测试记录
+- `docs/defense_ppt_outline.md`：答辩 PPT 提纲
+- `docs/demo_guide.md`：系统演示与复现实验指南
