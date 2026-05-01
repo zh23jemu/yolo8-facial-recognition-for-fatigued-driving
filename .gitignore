@@ -20,6 +20,8 @@ weights/*
 !weights/.gitkeep
 !weights/best.pt
 !weights/best.onnx
+!weights/best_cbam.pt
+!weights/best_cbam.onnx
 runs/*
 !runs/.gitkeep
 !runs/yolo/
@@ -28,6 +30,11 @@ runs/*
 !runs/yolo/fatigue_yolov8n_slurm/confusion_matrix.png
 !runs/yolo/fatigue_yolov8n_slurm/BoxPR_curve.png
 !runs/yolo/fatigue_yolov8n_slurm/BoxF1_curve.png
+!runs/yolo/fatigue_yolov8n_cbam/
+!runs/yolo/fatigue_yolov8n_cbam/results.csv
+!runs/yolo/fatigue_yolov8n_cbam/confusion_matrix.png
+!runs/yolo/fatigue_yolov8n_cbam/BoxPR_curve.png
+!runs/yolo/fatigue_yolov8n_cbam/BoxF1_curve.png
 
 # 日志、报告中间文件与导出结果
 *.log
@@ -47,10 +54,16 @@ slurm_logs/*
 # 允许保留本次毕业设计训练得到的核心模型与论文实验图。
 !weights/best.pt
 !weights/best.onnx
+!weights/best_cbam.pt
+!weights/best_cbam.onnx
 !runs/yolo/fatigue_yolov8n_slurm/results.csv
 !runs/yolo/fatigue_yolov8n_slurm/confusion_matrix.png
 !runs/yolo/fatigue_yolov8n_slurm/BoxPR_curve.png
 !runs/yolo/fatigue_yolov8n_slurm/BoxF1_curve.png
+!runs/yolo/fatigue_yolov8n_cbam/results.csv
+!runs/yolo/fatigue_yolov8n_cbam/confusion_matrix.png
+!runs/yolo/fatigue_yolov8n_cbam/BoxPR_curve.png
+!runs/yolo/fatigue_yolov8n_cbam/BoxF1_curve.png
 
 # IDE 与系统文件
 .idea/

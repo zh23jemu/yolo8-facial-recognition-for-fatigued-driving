@@ -51,7 +51,7 @@
 
 ## 4. 训练参数
 
-正式训练使用 Slurm GPU 节点完成，训练脚本为 `scripts/slurm/train_yolo.sbatch`。
+正式训练使用 Slurm GPU 节点完成。基线模型训练脚本为 `scripts/slurm/train_yolo.sbatch`，注意力机制模型训练脚本为 `scripts/slurm/train_yolo_cbam.sbatch`。
 
 | 参数 | 取值 |
 | --- | --- |
@@ -66,6 +66,8 @@
 | 输出目录 | `runs/yolo/fatigue_yolov8n_slurm` |
 
 ## 5. 实验结果
+
+### 5.1 YOLOv8n 基线模型
 
 第 50 轮验证集整体指标如下：
 
@@ -105,6 +107,59 @@
 - PyTorch 权重：`weights/best.pt`
 - ONNX 权重：`weights/best.onnx`
 
+### 5.2 YOLOv8n + CBAM 注意力机制模型
+
+为体现题目中的注意力机制，本研究在 YOLOv8n 主干网络末端加入 CBAM 模块。CBAM 同时包含通道注意力和空间注意力，有助于增强模型对闭眼、睁眼和打哈欠等局部疲劳特征的关注能力。
+
+CBAM 模型结构与训练设置：
+
+| 项目 | 取值 |
+| --- | --- |
+| 模型配置 | `configs/yolov8n_cbam.yaml` |
+| 注意力模块 | CBAM |
+| 注意力位置 | 主干网络 SPPF 后 |
+| 参数量 | 3,077,323 |
+| GFLOPs | 8.2 |
+| 训练轮数 | 50 |
+| batch size | 16 |
+| 预训练迁移 | 从 `yolov8n.pt` 迁移初始化 |
+| 输出目录 | `runs/yolo/fatigue_yolov8n_cbam` |
+
+CBAM 模型最终验证指标如下：
+
+| 类别 | Images | Instances | Precision | Recall | mAP50 | mAP50-95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| all | 542 | 578 | 0.684 | 0.937 | 0.858 | 0.547 |
+| Eyeclosed | 278 | 353 | 0.871 | 0.946 | 0.973 | 0.574 |
+| Eyeopen | 107 | 144 | 0.657 | 0.889 | 0.839 | 0.531 |
+| Yawn | 81 | 81 | 0.524 | 0.975 | 0.762 | 0.535 |
+
+CBAM 模型推理速度如下：
+
+| 阶段 | 单图耗时 |
+| --- | ---: |
+| preprocess | 0.1 ms |
+| inference | 1.1 ms |
+| postprocess | 0.6 ms |
+
+CBAM 实验图文件：
+
+- 混淆矩阵：`runs/yolo/fatigue_yolov8n_cbam/confusion_matrix.png`
+- PR 曲线：`runs/yolo/fatigue_yolov8n_cbam/BoxPR_curve.png`
+- F1 曲线：`runs/yolo/fatigue_yolov8n_cbam/BoxF1_curve.png`
+- 训练日志：`runs/yolo/fatigue_yolov8n_cbam/results.csv`
+
+### 5.3 对比分析
+
+| 模型 | Precision | Recall | mAP50 | mAP50-95 | 参数量 | 推理耗时 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| YOLOv8n | 0.6868 | 0.9114 | 0.8347 | 0.5368 | 约 3.01M | 0.9 ms |
+| YOLOv8n + CBAM | 0.6840 | 0.9370 | 0.8580 | 0.5470 | 约 3.08M | 1.1 ms |
+
+与 YOLOv8n 基线模型相比，YOLOv8n + CBAM 的 mAP50 提升约 0.0233，mAP50-95 提升约 0.0102，Recall 提升约 0.0256。CBAM 模型参数量略有增加，推理耗时从约 0.9 ms 增加到约 1.1 ms，但整体仍满足实时检测需求。
+
+从类别结果看，CBAM 对打哈欠类别提升较明显，Yawn 类别 mAP50 从约 0.693 提升到 0.762，mAP50-95 从约 0.502 提升到 0.535。这说明注意力机制能够增强模型对嘴部张开等局部疲劳特征的关注能力。
+
 ## 6. 系统演示测试
 
 本地 PyQt5 桌面系统已完成基础演示闭环，支持选择图片/视频、摄像头检测、保存截图和生成检测日志。当前测试样例为单张打哈欠图片，系统检测结果如下：
@@ -123,21 +178,10 @@
 
 ## 7. 阶段结论
 
-当前阶段已经完成目标检测模型训练和系统演示闭环。模型在验证集上达到 mAP50 约 0.835，能够较好识别闭眼、睁眼和打哈欠三类疲劳相关面部状态。其中闭眼类别表现最好，打哈欠类别精度相对较低，后续可通过补充打哈欠样本、调整数据增强策略或增加训练轮数进一步优化。
+当前阶段已经完成目标检测模型训练、注意力机制对比实验和系统演示闭环。YOLOv8n 基线模型在验证集上达到 mAP50 约 0.835，YOLOv8n + CBAM 模型达到 mAP50 约 0.858。对比结果表明，引入注意力机制后模型整体检测精度有所提升，尤其对打哈欠类别的识别能力提升更明显。
 
 从工程实现角度看，系统已经具备毕业设计演示所需的核心功能，包括模型加载、图像/视频输入、疲劳状态显示、报警状态标识、截图保存和日志记录。
 
-## 8. 后续训练建议
+## 8. 后续工作建议
 
-如果论文题目需要突出“注意力机制”改进效果，建议继续补充至少一组对比实验：
-
-1. **YOLOv8n 基线模型**：当前已完成，可作为 baseline。
-2. **YOLOv8n + 注意力机制模型**：采用 YOLOv8n + CBAM，并在相同数据集、相同训练轮数下训练。
-3. **对比指标**：Precision、Recall、mAP50、mAP50-95、模型大小、推理速度。
-
-已新增训练脚本：
-
-- 短跑测试：`scripts/slurm/train_yolo_cbam_test.sbatch`
-- 正式训练：`scripts/slurm/train_yolo_cbam.sbatch`
-
-建议先提交短跑测试，确认自定义模型配置可训练后，再提交正式训练。
+当前 YOLOv8n 与 YOLOv8n + CBAM 的核心对比实验已经完成。后续若时间允许，可继续开展视频序列层面的 LSTM + Attention 疲劳状态分类实验；若时间紧张，可优先围绕当前目标检测模型和桌面系统完成论文撰写与答辩材料制作。

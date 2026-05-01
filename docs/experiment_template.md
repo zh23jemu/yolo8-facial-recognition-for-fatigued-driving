@@ -16,7 +16,7 @@
 | 模型 | Precision | Recall | mAP50 | mAP50-95 | FPS | 模型大小 |
 | --- | --- | --- | --- | --- | --- | --- |
 | YOLOv8n | 0.6868 | 0.9114 | 0.8347 | 0.5368 | 约 14.14（本地 CPU 单图演示） | best.pt 约 6.0 MB |
-| YOLOv8n + Attention |  |  |  |  |  |  |
+| YOLOv8n + CBAM | 0.6840 | 0.9370 | 0.8580 | 0.5470 | 约 1.1 ms / image（服务器验证） | best.pt 约 6.4 MB |
 | ONNX Runtime |  |  |  |  |  |  |
 
 ## 时序分类指标
@@ -27,4 +27,4 @@
 
 ## 结论
 
-当前 YOLOv8n 基线模型已经完成训练，并能够支持本地桌面系统演示。后续如需突出题目中的注意力机制，应继续补充 YOLOv8n + Attention 对比实验。
+当前 YOLOv8n 基线模型与 YOLOv8n + CBAM 注意力模型均已完成训练。CBAM 模型在 mAP50、mAP50-95 和 Recall 上优于基线模型，可作为论文中“注意力机制改进”的主要实验依据。
