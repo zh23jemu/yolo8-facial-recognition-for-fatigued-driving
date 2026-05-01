@@ -32,6 +32,9 @@ STATE_TEXT = {
     "fatigue": "疲劳",
 }
 
+IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+VIDEO_SUFFIXES = {".mp4", ".avi", ".mov", ".mkv", ".wmv"}
+
 
 def parse_args() -> argparse.Namespace:
     """解析桌面演示系统参数。"""
@@ -50,6 +53,13 @@ def load_yolo(weights: str):
     except ImportError as exc:
         raise RuntimeError(
             "未安装 ultralytics，请先执行：.venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+        ) from exc
+    except OSError as exc:
+        raise RuntimeError(
+            "模型依赖加载失败，通常是 Windows 本地 PyTorch 安装不完整或 CUDA/CPU 版本不匹配。\n\n"
+            "建议修复命令：\n"
+            ".venv\\Scripts\\python.exe -m pip uninstall -y torch torchvision torchaudio\n"
+            ".venv\\Scripts\\python.exe -m pip install -r requirements-windows-cpu.txt"
         ) from exc
 
     if not Path(weights).exists():
@@ -111,14 +121,15 @@ class VideoWorker(QThread):
     def run(self) -> None:
         """持续读取视频帧，执行检测并发送给界面。"""
 
-        capture = cv2.VideoCapture(self.source)
-        if not capture.isOpened():
-            self.error_ready.emit(f"无法打开输入源：{self.source}")
-            return
-
         log_file = None
         log_writer = None
+        capture = None
         try:
+            source_path = Path(str(self.source))
+            is_image_source = (
+                isinstance(self.source, str)
+                and source_path.suffix.lower() in IMAGE_SUFFIXES
+            )
             log_dir = Path("runs/app_logs")
             log_dir.mkdir(parents=True, exist_ok=True)
             log_path = log_dir / f"detection_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
@@ -137,51 +148,73 @@ class VideoWorker(QThread):
             )
             self.log_path_ready.emit(str(log_path))
 
+            if is_image_source:
+                frame = cv2.imread(str(source_path))
+                if frame is None:
+                    self.error_ready.emit(f"无法读取图片：{self.source}")
+                    return
+                self._process_frame(frame, log_writer)
+                return
+
+            capture = cv2.VideoCapture(self.source)
+            if not capture.isOpened():
+                self.error_ready.emit(f"无法打开输入源：{self.source}")
+                return
+
             while self._running:
                 ok, frame = capture.read()
                 if not ok:
                     break
 
-                start = time.perf_counter()
-                result = self.model.predict(frame, conf=self.conf, verbose=False)[0]
-                annotated = result.plot()
-                detections = detections_from_result(result)
-                feature = feature_from_detections(detections)
-                state_info = self.evaluator.update(feature)
-                fps = 1.0 / max(time.perf_counter() - start, 1e-6)
-                state = str(state_info["state"])
-                state_cn = STATE_TEXT.get(state, state)
-                detection_text = "；".join(
-                    f"{name}:{conf:.2f}" for name, conf in detections
-                ) or "未检测到目标"
-
-                state_text = (
-                    f"状态：{state_cn}    "
-                    f"闭眼比例：{state_info['closed_ratio']}    "
-                    f"打哈欠次数：{state_info['yawn_count']}    "
-                    f"FPS：{fps:.1f}"
-                )
-                if log_writer is not None:
-                    log_writer.writerow(
-                        [
-                            self.frame_index,
-                            state,
-                            state_info["closed_ratio"],
-                            state_info["yawn_count"],
-                            int(bool(state_info["alarm"])),
-                            round(fps, 2),
-                            detection_text,
-                        ]
-                    )
-                self.status_ready.emit(state_text, bool(state_info["alarm"]), detection_text)
-                self.frame_ready.emit(annotated)
-                self.frame_index += 1
+                self._process_frame(frame, log_writer)
         except Exception as exc:  # noqa: BLE001
             self.error_ready.emit(str(exc))
         finally:
-            capture.release()
+            if capture is not None:
+                capture.release()
             if log_file is not None:
                 log_file.close()
+
+    def _process_frame(self, frame, log_writer) -> None:
+        """处理一帧图像并发送界面更新。
+
+        图片、视频和摄像头最终都会走这个函数，保证检测显示、日志记录和状态判断逻辑一致。
+        """
+
+        start = time.perf_counter()
+        result = self.model.predict(frame, conf=self.conf, verbose=False)[0]
+        annotated = result.plot()
+        detections = detections_from_result(result)
+        feature = feature_from_detections(detections)
+        state_info = self.evaluator.update(feature)
+        fps = 1.0 / max(time.perf_counter() - start, 1e-6)
+        state = str(state_info["state"])
+        state_cn = STATE_TEXT.get(state, state)
+        detection_text = "；".join(
+            f"{name}:{conf:.2f}" for name, conf in detections
+        ) or "未检测到目标"
+
+        state_text = (
+            f"状态：{state_cn}    "
+            f"闭眼比例：{state_info['closed_ratio']}    "
+            f"打哈欠次数：{state_info['yawn_count']}    "
+            f"FPS：{fps:.1f}"
+        )
+        if log_writer is not None:
+            log_writer.writerow(
+                [
+                    self.frame_index,
+                    state,
+                    state_info["closed_ratio"],
+                    state_info["yawn_count"],
+                    int(bool(state_info["alarm"])),
+                    round(fps, 2),
+                    detection_text,
+                ]
+            )
+        self.status_ready.emit(state_text, bool(state_info["alarm"]), detection_text)
+        self.frame_ready.emit(annotated)
+        self.frame_index += 1
 
 
 class MainWindow(QMainWindow):
@@ -193,7 +226,7 @@ class MainWindow(QMainWindow):
         self.conf = conf
         self.model = None
         self.worker: VideoWorker | None = None
-        self.video_path: str | None = None
+        self.media_path: str | None = None
         self.latest_frame = None
         self.current_log_path: str | None = None
         self._build_ui()
@@ -204,7 +237,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("疲劳驾驶面部识别系统")
         self.resize(1100, 760)
 
-        self.video_label = QLabel("请选择视频或打开摄像头")
+        self.video_label = QLabel("请选择图片/视频或打开摄像头")
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setMinimumSize(960, 540)
         self.video_label.setStyleSheet("background:#111;color:#ddd;font-size:22px;")
@@ -216,7 +249,7 @@ class MainWindow(QMainWindow):
         self.detail_label.setWordWrap(True)
         self.detail_label.setStyleSheet("font-size:14px;color:#444;")
 
-        self.select_button = QPushButton("选择视频")
+        self.select_button = QPushButton("选择图片/视频")
         self.camera_button = QPushButton("打开摄像头")
         self.start_button = QPushButton("开始检测")
         self.stop_button = QPushButton("停止检测")
@@ -224,7 +257,7 @@ class MainWindow(QMainWindow):
         self.stop_button.setEnabled(False)
         self.screenshot_button.setEnabled(False)
 
-        self.select_button.clicked.connect(self.select_video)
+        self.select_button.clicked.connect(self.select_media)
         self.camera_button.clicked.connect(self.start_camera)
         self.start_button.clicked.connect(self.start_video)
         self.stop_button.clicked.connect(self.stop_detection)
@@ -259,27 +292,31 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "模型加载失败", str(exc))
             return False
 
-    def select_video(self) -> None:
-        """选择本地视频文件。"""
+    def select_media(self) -> None:
+        """选择本地图片或视频文件。
+
+        没有演示视频时，可以直接选择数据集测试图片进行单张检测，
+        这样答辩时也能展示检测框、疲劳状态、截图和日志功能。
+        """
 
         path, _ = QFileDialog.getOpenFileName(
             self,
-            "选择视频文件",
+            "选择图片或视频文件",
             "",
-            "Video Files (*.mp4 *.avi *.mov *.mkv *.wmv)",
+            "Media Files (*.jpg *.jpeg *.png *.bmp *.webp *.mp4 *.avi *.mov *.mkv *.wmv)",
         )
         if path:
-            self.video_path = path
-            self.status_label.setText(f"已选择视频：{path}")
-            self.detail_label.setText(f"当前视频：{path}")
+            self.media_path = path
+            self.status_label.setText(f"已选择文件：{path}")
+            self.detail_label.setText(f"当前文件：{path}")
 
     def start_video(self) -> None:
-        """开始检测已选择的视频。"""
+        """开始检测已选择的图片或视频。"""
 
-        if not self.video_path:
-            QMessageBox.information(self, "提示", "请先选择视频文件。")
+        if not self.media_path:
+            QMessageBox.information(self, "提示", "请先选择图片或视频文件。")
             return
-        self._start_source(self.video_path)
+        self._start_source(self.media_path)
 
     def start_camera(self) -> None:
         """打开默认摄像头并开始检测。"""

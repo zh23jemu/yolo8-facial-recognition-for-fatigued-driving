@@ -38,6 +38,13 @@ py -3.10 -m venv .venv
 .venv/bin/python -m pip install -r requirements-server-cu121.txt
 ```
 
+Windows 本地只做演示推理时，推荐使用 CPU 版 PyTorch。若出现 `c10.dll` 或 PyTorch DLL 加载失败，执行：
+
+```powershell
+.venv\Scripts\python.exe -m pip uninstall -y torch torchvision torchaudio
+.venv\Scripts\python.exe -m pip install -r requirements-windows-cpu.txt
+```
+
 ## 数据集放置
 
 大型数据集不提交到仓库。推荐目录：
@@ -96,6 +103,7 @@ docs/server_slurm_training.md
 
 桌面演示系统功能：
 
+- 选择本地图片进行单张检测
 - 选择本地视频进行检测
 - 打开摄像头实时检测
 - 显示正常、疑似疲劳、疲劳状态
