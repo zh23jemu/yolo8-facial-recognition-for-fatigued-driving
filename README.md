@@ -94,6 +94,15 @@ docs/server_slurm_training.md
 .venv\Scripts\python.exe -m src.app.main_window --weights weights/best.pt
 ```
 
+桌面演示系统功能：
+
+- 选择本地视频进行检测
+- 打开摄像头实时检测
+- 显示正常、疑似疲劳、疲劳状态
+- 疲劳状态红色报警
+- 保存当前检测截图到 `runs/screenshots/`
+- 自动记录检测日志到 `runs/app_logs/`
+
 ## 第一轮成果
 
 - 项目目录结构

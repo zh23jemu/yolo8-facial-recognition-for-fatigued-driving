@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
 
@@ -22,6 +24,13 @@ from PyQt5.QtWidgets import (
 )
 
 from src.utils.fatigue_rules import FatigueRuleEvaluator, feature_from_detections
+
+
+STATE_TEXT = {
+    "normal": "正常",
+    "suspected_fatigue": "疑似疲劳",
+    "fatigue": "疲劳",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -44,7 +53,11 @@ def load_yolo(weights: str):
         ) from exc
 
     if not Path(weights).exists():
-        raise FileNotFoundError(f"未找到模型权重：{weights}")
+        raise FileNotFoundError(
+            f"未找到模型权重：{weights}\n\n"
+            "请先把服务器训练得到的 best.pt 放到项目的 weights/best.pt，"
+            "或启动时通过 --weights 指定实际权重路径。"
+        )
     return YOLO(weights)
 
 
@@ -76,8 +89,9 @@ class VideoWorker(QThread):
     推理过程放到独立线程中执行，避免 YOLOv8 检测阻塞主界面。
     """
 
-    frame_ready = pyqtSignal(QPixmap)
-    status_ready = pyqtSignal(str, bool)
+    frame_ready = pyqtSignal(object)
+    status_ready = pyqtSignal(str, bool, str)
+    log_path_ready = pyqtSignal(str)
     error_ready = pyqtSignal(str)
 
     def __init__(self, model, source: str | int, conf: float) -> None:
@@ -87,6 +101,7 @@ class VideoWorker(QThread):
         self.conf = conf
         self._running = True
         self.evaluator = FatigueRuleEvaluator()
+        self.frame_index = 0
 
     def stop(self) -> None:
         """请求线程安全停止。"""
@@ -101,7 +116,27 @@ class VideoWorker(QThread):
             self.error_ready.emit(f"无法打开输入源：{self.source}")
             return
 
+        log_file = None
+        log_writer = None
         try:
+            log_dir = Path("runs/app_logs")
+            log_dir.mkdir(parents=True, exist_ok=True)
+            log_path = log_dir / f"detection_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            log_file = log_path.open("w", newline="", encoding="utf-8-sig")
+            log_writer = csv.writer(log_file)
+            log_writer.writerow(
+                [
+                    "frame_index",
+                    "state",
+                    "closed_ratio",
+                    "yawn_count",
+                    "alarm",
+                    "fps",
+                    "detections",
+                ]
+            )
+            self.log_path_ready.emit(str(log_path))
+
             while self._running:
                 ok, frame = capture.read()
                 if not ok:
@@ -114,19 +149,39 @@ class VideoWorker(QThread):
                 feature = feature_from_detections(detections)
                 state_info = self.evaluator.update(feature)
                 fps = 1.0 / max(time.perf_counter() - start, 1e-6)
+                state = str(state_info["state"])
+                state_cn = STATE_TEXT.get(state, state)
+                detection_text = "；".join(
+                    f"{name}:{conf:.2f}" for name, conf in detections
+                ) or "未检测到目标"
 
                 state_text = (
-                    f"状态：{state_info['state']}    "
+                    f"状态：{state_cn}    "
                     f"闭眼比例：{state_info['closed_ratio']}    "
                     f"打哈欠次数：{state_info['yawn_count']}    "
                     f"FPS：{fps:.1f}"
                 )
-                self.status_ready.emit(state_text, bool(state_info["alarm"]))
-                self.frame_ready.emit(cv_frame_to_pixmap(annotated))
+                if log_writer is not None:
+                    log_writer.writerow(
+                        [
+                            self.frame_index,
+                            state,
+                            state_info["closed_ratio"],
+                            state_info["yawn_count"],
+                            int(bool(state_info["alarm"])),
+                            round(fps, 2),
+                            detection_text,
+                        ]
+                    )
+                self.status_ready.emit(state_text, bool(state_info["alarm"]), detection_text)
+                self.frame_ready.emit(annotated)
+                self.frame_index += 1
         except Exception as exc:  # noqa: BLE001
             self.error_ready.emit(str(exc))
         finally:
             capture.release()
+            if log_file is not None:
+                log_file.close()
 
 
 class MainWindow(QMainWindow):
@@ -139,6 +194,8 @@ class MainWindow(QMainWindow):
         self.model = None
         self.worker: VideoWorker | None = None
         self.video_path: str | None = None
+        self.latest_frame = None
+        self.current_log_path: str | None = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -155,26 +212,35 @@ class MainWindow(QMainWindow):
         self.status_label = QLabel("状态：未开始")
         self.status_label.setStyleSheet("font-size:18px;color:#1b5e20;font-weight:bold;")
 
+        self.detail_label = QLabel(f"权重：{self.weights}    置信度阈值：{self.conf}")
+        self.detail_label.setWordWrap(True)
+        self.detail_label.setStyleSheet("font-size:14px;color:#444;")
+
         self.select_button = QPushButton("选择视频")
         self.camera_button = QPushButton("打开摄像头")
         self.start_button = QPushButton("开始检测")
         self.stop_button = QPushButton("停止检测")
+        self.screenshot_button = QPushButton("保存截图")
         self.stop_button.setEnabled(False)
+        self.screenshot_button.setEnabled(False)
 
         self.select_button.clicked.connect(self.select_video)
         self.camera_button.clicked.connect(self.start_camera)
         self.start_button.clicked.connect(self.start_video)
         self.stop_button.clicked.connect(self.stop_detection)
+        self.screenshot_button.clicked.connect(self.save_screenshot)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.select_button)
         button_layout.addWidget(self.camera_button)
         button_layout.addWidget(self.start_button)
         button_layout.addWidget(self.stop_button)
+        button_layout.addWidget(self.screenshot_button)
 
         layout = QVBoxLayout()
         layout.addWidget(self.video_label)
         layout.addWidget(self.status_label)
+        layout.addWidget(self.detail_label)
         layout.addLayout(button_layout)
 
         container = QWidget()
@@ -205,6 +271,7 @@ class MainWindow(QMainWindow):
         if path:
             self.video_path = path
             self.status_label.setText(f"已选择视频：{path}")
+            self.detail_label.setText(f"当前视频：{path}")
 
     def start_video(self) -> None:
         """开始检测已选择的视频。"""
@@ -231,13 +298,16 @@ class MainWindow(QMainWindow):
         self.worker = VideoWorker(self.model, source, self.conf)
         self.worker.frame_ready.connect(self.update_frame)
         self.worker.status_ready.connect(self.update_status)
+        self.worker.log_path_ready.connect(self.update_log_path)
         self.worker.error_ready.connect(self.show_error)
         self.worker.finished.connect(self.on_worker_finished)
         self.worker.start()
 
         self.start_button.setEnabled(False)
         self.camera_button.setEnabled(False)
+        self.select_button.setEnabled(False)
         self.stop_button.setEnabled(True)
+        self.screenshot_button.setEnabled(True)
 
     def stop_detection(self) -> None:
         """停止当前检测任务。"""
@@ -247,9 +317,11 @@ class MainWindow(QMainWindow):
             self.worker.wait(2000)
         self.on_worker_finished()
 
-    def update_frame(self, pixmap: QPixmap) -> None:
+    def update_frame(self, frame) -> None:
         """刷新视频画面。"""
 
+        self.latest_frame = frame
+        pixmap = cv_frame_to_pixmap(frame)
         scaled = pixmap.scaled(
             self.video_label.size(),
             Qt.KeepAspectRatio,
@@ -257,7 +329,7 @@ class MainWindow(QMainWindow):
         )
         self.video_label.setPixmap(scaled)
 
-    def update_status(self, text: str, alarm: bool) -> None:
+    def update_status(self, text: str, alarm: bool, detection_text: str) -> None:
         """刷新疲劳状态文本和报警颜色。"""
 
         if alarm:
@@ -265,6 +337,39 @@ class MainWindow(QMainWindow):
         else:
             self.status_label.setStyleSheet("font-size:18px;color:#1b5e20;font-weight:bold;")
         self.status_label.setText(text)
+        log_text = f"日志：{self.current_log_path}" if self.current_log_path else "日志：准备中"
+        self.detail_label.setText(f"检测目标：{detection_text}    {log_text}")
+
+    def update_log_path(self, path: str) -> None:
+        """显示当前检测日志保存位置。"""
+
+        self.current_log_path = path
+        self.detail_label.setText(f"检测日志：{path}")
+
+    def save_screenshot(self) -> None:
+        """保存当前检测画面截图，便于论文和答辩使用。"""
+
+        if self.latest_frame is None:
+            QMessageBox.information(self, "提示", "当前还没有可保存的检测画面。")
+            return
+
+        screenshot_dir = Path("runs/screenshots")
+        screenshot_dir.mkdir(parents=True, exist_ok=True)
+        default_path = screenshot_dir / f"screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "保存检测截图",
+            str(default_path),
+            "Image Files (*.jpg *.png *.bmp)",
+        )
+        if not path:
+            return
+
+        success = cv2.imwrite(path, self.latest_frame)
+        if success:
+            QMessageBox.information(self, "保存成功", f"截图已保存到：\n{path}")
+        else:
+            QMessageBox.warning(self, "保存失败", f"无法保存截图：\n{path}")
 
     def show_error(self, message: str) -> None:
         """显示检测线程错误。"""
@@ -276,6 +381,7 @@ class MainWindow(QMainWindow):
 
         self.start_button.setEnabled(True)
         self.camera_button.setEnabled(True)
+        self.select_button.setEnabled(True)
         self.stop_button.setEnabled(False)
 
     def closeEvent(self, event) -> None:  # noqa: N802
@@ -297,4 +403,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
