@@ -10,8 +10,10 @@
 #   squeue -u $USER
 
 #SBATCH --job-name=fatigue-yolov8
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:1
+#SBATCH --account=mfk-gsr2
+#SBATCH --partition=plcyf-gpu
+#SBATCH --qos=normal
+#SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
@@ -62,6 +64,9 @@ else:
     sys.exit(1)
 PY
 
+# 固定 Ultralytics 输出根目录，避免服务器全局 settings 把结果嵌套到 runs/detect/runs/yolo。
+"${PYTHON_BIN}" -m yolo settings runs_dir="${SLURM_SUBMIT_DIR}/runs" datasets_dir="${SLURM_SUBMIT_DIR}/data"
+
 # 正式训练命令。
 # 注意：--device 0 表示使用当前 Slurm 分配给作业的第一张 GPU。
 "${PYTHON_BIN}" -m src.train.train_yolo \
@@ -69,6 +74,7 @@ PY
   --model yolov8n.pt \
   --epochs 50 \
   --batch 16 \
+  --workers 4 \
   --imgsz 640 \
   --device 0 \
   --project runs/yolo \

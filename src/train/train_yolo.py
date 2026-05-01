@@ -16,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=50, help="训练轮数")
     parser.add_argument("--imgsz", type=int, default=640, help="输入图片尺寸")
     parser.add_argument("--batch", type=int, default=16, help="批大小")
+    parser.add_argument("--workers", type=int, default=4, help="数据加载进程数量，Slurm 环境建议不超过分配的 CPU 核数")
     parser.add_argument("--device", default=None, help="训练设备，例如 0、cpu；不填则由框架自动选择")
     parser.add_argument("--project", default="runs/yolo", help="训练输出目录")
     parser.add_argument("--name", default="fatigue_yolov8n", help="本次实验名称")
@@ -48,6 +49,7 @@ def main() -> None:
         "epochs": args.epochs,
         "imgsz": args.imgsz,
         "batch": args.batch,
+        "workers": args.workers,
         "project": args.project,
         "name": args.name,
         "optimizer": "AdamW",
@@ -72,4 +74,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
