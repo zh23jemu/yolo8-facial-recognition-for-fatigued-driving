@@ -26,8 +26,8 @@ runs/*
 !runs/yolo/fatigue_yolov8n_slurm/
 !runs/yolo/fatigue_yolov8n_slurm/results.csv
 !runs/yolo/fatigue_yolov8n_slurm/confusion_matrix.png
-!runs/yolo/fatigue_yolov8n_slurm/PR_curve.png
-!runs/yolo/fatigue_yolov8n_slurm/F1_curve.png
+!runs/yolo/fatigue_yolov8n_slurm/BoxPR_curve.png
+!runs/yolo/fatigue_yolov8n_slurm/BoxF1_curve.png
 
 # 日志、报告中间文件与导出结果
 *.log
@@ -49,8 +49,8 @@ slurm_logs/*
 !weights/best.onnx
 !runs/yolo/fatigue_yolov8n_slurm/results.csv
 !runs/yolo/fatigue_yolov8n_slurm/confusion_matrix.png
-!runs/yolo/fatigue_yolov8n_slurm/PR_curve.png
-!runs/yolo/fatigue_yolov8n_slurm/F1_curve.png
+!runs/yolo/fatigue_yolov8n_slurm/BoxPR_curve.png
+!runs/yolo/fatigue_yolov8n_slurm/BoxF1_curve.png
 
 # IDE 与系统文件
 .idea/
