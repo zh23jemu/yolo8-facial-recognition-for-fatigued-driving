@@ -44,6 +44,8 @@ slurm-*.out
 slurm_logs/*
 !slurm_logs/.gitkeep
 docs/presentation_workspace/
+docs/thesis_render*/
+docs/thesis_render*_montage.png
 *.onnx
 *.pt
 *.pth

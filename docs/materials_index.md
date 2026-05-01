@@ -44,6 +44,8 @@
 | 实验报告 | `docs/experiment_report.md` | 写实验章节 |
 | 系统测试记录 | `docs/system_test_report.md` | 写测试章节 |
 | 论文章节素材 | `docs/thesis_chapter_materials.md` | 写第 4、5、6 章 |
+| 论文正文初稿 | `docs/thesis_draft.md` | Markdown 版正文，便于继续扩写 |
+| 论文 Word 草稿 | `docs/thesis_draft.docx` | Word 版正文，便于套学校模板 |
 | 答辩 PPT 提纲 | `docs/defense_ppt_outline.md` | 制作答辩 PPT |
 | 答辩 PPT 初稿 | `docs/defense_presentation.pptx` | 答辩展示与后续精修 |
 | PPT 总览预览图 | `docs/defense_presentation_preview.png` | 快速检查 PPT 页面布局 |

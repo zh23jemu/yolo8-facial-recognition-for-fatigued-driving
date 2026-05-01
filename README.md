@@ -130,3 +130,5 @@ docs/server_slurm_training.md
 - `docs/demo_guide.md`：系统演示与复现实验指南
 - `docs/defense_presentation.pptx`：答辩 PPT 初稿
 - `docs/defense_presentation_preview.png`：答辩 PPT 总览预览图
+- `docs/thesis_draft.md`：论文正文 Markdown 初稿
+- `docs/thesis_draft.docx`：论文正文 Word 草稿
