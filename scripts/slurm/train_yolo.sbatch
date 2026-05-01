@@ -64,11 +64,9 @@ else:
     sys.exit(1)
 PY
 
-# 固定 Ultralytics 输出根目录，避免服务器全局 settings 把结果嵌套到 runs/detect/runs/yolo。
-"${PYTHON_BIN}" -m yolo settings runs_dir="${SLURM_SUBMIT_DIR}/runs" datasets_dir="${SLURM_SUBMIT_DIR}/data"
-
 # 正式训练命令。
 # 注意：--device 0 表示使用当前 Slurm 分配给作业的第一张 GPU。
+# --project 使用绝对路径，避免 Ultralytics 服务器全局 settings 把结果嵌套到 runs/detect/runs/yolo。
 "${PYTHON_BIN}" -m src.train.train_yolo \
   --data configs/yolo_data.yaml \
   --model yolov8n.pt \
@@ -77,7 +75,7 @@ PY
   --workers 4 \
   --imgsz 640 \
   --device 0 \
-  --project runs/yolo \
+  --project "${SLURM_SUBMIT_DIR}/runs/yolo" \
   --name fatigue_yolov8n_slurm \
   --export-onnx
 
