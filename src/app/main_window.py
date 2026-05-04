@@ -14,6 +14,7 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QMainWindow,
@@ -35,6 +36,129 @@ STATE_TEXT = {
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 VIDEO_SUFFIXES = {".mp4", ".avi", ".mov", ".mkv", ".wmv"}
+
+APP_STYLESHEET = """
+QWidget#appRoot {
+    background: #eef2f5;
+    color: #17212b;
+    font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+QLabel#titleLabel {
+    color: #17212b;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+QLabel#subtitleLabel {
+    color: #627183;
+    font-size: 14px;
+}
+
+QFrame#videoFrame {
+    background: #111827;
+    border: 1px solid #263241;
+    border-radius: 12px;
+}
+
+QLabel#videoLabel {
+    background: #0b1118;
+    border: 1px solid #202b38;
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+QFrame#statusFrame {
+    background: #ffffff;
+    border: 1px solid #d9e2ea;
+    border-radius: 10px;
+}
+
+QLabel#statusLabel {
+    font-size: 19px;
+    font-weight: 800;
+    padding: 4px 0;
+}
+
+QLabel#statusLabel[status="idle"] {
+    color: #475569;
+}
+
+QLabel#statusLabel[status="running"] {
+    color: #1d4ed8;
+}
+
+QLabel#statusLabel[status="normal"] {
+    color: #15803d;
+}
+
+QLabel#statusLabel[status="alarm"] {
+    color: #b91c1c;
+}
+
+QLabel#detailLabel {
+    color: #526173;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+QPushButton {
+    min-height: 38px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+QPushButton#primaryButton {
+    background: #0f766e;
+    color: #ffffff;
+    border: 1px solid #0f766e;
+}
+
+QPushButton#primaryButton:hover {
+    background: #115e59;
+}
+
+QPushButton#secondaryButton {
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+
+QPushButton#secondaryButton:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+QPushButton#successButton {
+    background: #2563eb;
+    color: #ffffff;
+    border: 1px solid #2563eb;
+}
+
+QPushButton#successButton:hover {
+    background: #1d4ed8;
+}
+
+QPushButton#dangerButton {
+    background: #dc2626;
+    color: #ffffff;
+    border: 1px solid #dc2626;
+}
+
+QPushButton#dangerButton:hover {
+    background: #b91c1c;
+}
+
+QPushButton:disabled {
+    background: #d8dee6;
+    color: #8a97a6;
+    border: 1px solid #cbd5e1;
+}
+"""
 
 
 def parse_args() -> argparse.Namespace:
@@ -237,25 +361,59 @@ class MainWindow(QMainWindow):
         """创建界面控件和布局。"""
 
         self.setWindowTitle("疲劳驾驶面部识别系统")
-        self.resize(1100, 760)
+        self.resize(1180, 820)
+        self.setMinimumSize(1040, 720)
+
+        title_label = QLabel("疲劳驾驶面部识别系统")
+        title_label.setObjectName("titleLabel")
+        subtitle_label = QLabel(
+            "YOLOv8 + CBAM 注意力机制 · 图片自动检测 · 视频/摄像头实时监测"
+        )
+        subtitle_label.setObjectName("subtitleLabel")
+
+        header_layout = QVBoxLayout()
+        header_layout.setSpacing(4)
+        header_layout.addWidget(title_label)
+        header_layout.addWidget(subtitle_label)
 
         self.video_label = QLabel("请选择图片/视频或打开摄像头")
+        self.video_label.setObjectName("videoLabel")
         self.video_label.setAlignment(Qt.AlignCenter)
         self.video_label.setMinimumSize(960, 540)
-        self.video_label.setStyleSheet("background:#111;color:#ddd;font-size:22px;")
+
+        video_frame = QFrame()
+        video_frame.setObjectName("videoFrame")
+        video_layout = QVBoxLayout()
+        video_layout.setContentsMargins(12, 12, 12, 12)
+        video_layout.addWidget(self.video_label)
+        video_frame.setLayout(video_layout)
 
         self.status_label = QLabel("状态：未开始")
-        self.status_label.setStyleSheet("font-size:18px;color:#1b5e20;font-weight:bold;")
+        self.status_label.setObjectName("statusLabel")
 
         self.detail_label = QLabel(f"权重：{self.weights}    置信度阈值：{self.conf}")
+        self.detail_label.setObjectName("detailLabel")
         self.detail_label.setWordWrap(True)
-        self.detail_label.setStyleSheet("font-size:14px;color:#444;")
+
+        status_frame = QFrame()
+        status_frame.setObjectName("statusFrame")
+        status_layout = QVBoxLayout()
+        status_layout.setContentsMargins(18, 14, 18, 14)
+        status_layout.setSpacing(8)
+        status_layout.addWidget(self.status_label)
+        status_layout.addWidget(self.detail_label)
+        status_frame.setLayout(status_layout)
 
         self.select_button = QPushButton("选择图片/视频")
         self.camera_button = QPushButton("打开摄像头")
         self.start_button = QPushButton("开始检测")
         self.stop_button = QPushButton("停止检测")
         self.screenshot_button = QPushButton("保存截图")
+        self.select_button.setObjectName("primaryButton")
+        self.camera_button.setObjectName("secondaryButton")
+        self.start_button.setObjectName("successButton")
+        self.stop_button.setObjectName("dangerButton")
+        self.screenshot_button.setObjectName("secondaryButton")
         self.stop_button.setEnabled(False)
         self.screenshot_button.setEnabled(False)
 
@@ -266,6 +424,7 @@ class MainWindow(QMainWindow):
         self.screenshot_button.clicked.connect(self.save_screenshot)
 
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(12)
         button_layout.addWidget(self.select_button)
         button_layout.addWidget(self.camera_button)
         button_layout.addWidget(self.start_button)
@@ -273,14 +432,29 @@ class MainWindow(QMainWindow):
         button_layout.addWidget(self.screenshot_button)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.video_label)
-        layout.addWidget(self.status_label)
-        layout.addWidget(self.detail_label)
+        layout.setContentsMargins(26, 22, 26, 22)
+        layout.setSpacing(18)
+        layout.addLayout(header_layout)
+        layout.addWidget(video_frame)
+        layout.addWidget(status_frame)
         layout.addLayout(button_layout)
 
         container = QWidget()
+        container.setObjectName("appRoot")
         container.setLayout(layout)
         self.setCentralWidget(container)
+        self.setStyleSheet(APP_STYLESHEET)
+        self._set_status_style("idle")
+
+    def _set_status_style(self, status: str) -> None:
+        """按检测状态切换状态栏视觉样式。
+
+        使用动态属性统一管理颜色，避免在多个回调里重复拼接大段样式。
+        """
+
+        self.status_label.setProperty("status", status)
+        self.status_label.style().unpolish(self.status_label)
+        self.status_label.style().polish(self.status_label)
 
     def ensure_model(self) -> bool:
         """按需加载模型，避免程序启动时因未准备权重而直接退出。"""
@@ -299,6 +473,7 @@ class MainWindow(QMainWindow):
 
         没有演示视频时，可以直接选择数据集测试图片进行单张检测，
         这样答辩时也能展示检测框、疲劳状态、截图和日志功能。
+        选择文件后仅更新当前输入源，用户点击“开始检测”后才真正启动模型推理。
         """
 
         path, _ = QFileDialog.getOpenFileName(
@@ -309,7 +484,8 @@ class MainWindow(QMainWindow):
         )
         if path:
             self.media_path = path
-            self.status_label.setText(f"已选择文件：{path}")
+            self._set_status_style("idle")
+            self.status_label.setText("已选择文件，点击“开始检测”后开始识别")
             self.detail_label.setText(f"当前文件：{path}")
 
     def start_video(self) -> None:
@@ -331,7 +507,18 @@ class MainWindow(QMainWindow):
         if self.worker is not None and self.worker.isRunning():
             QMessageBox.information(self, "提示", "检测正在运行，请先停止当前任务。")
             return
+        # 自动打开图片时，首次加载 YOLO 模型可能耗时较长。
+        # 因此先把“正在检测/准备模型”的提示显示出来，并立即刷新事件循环，
+        # 避免用户误以为选择图片后没有响应。
+        source_text = "摄像头" if isinstance(source, int) else str(source)
+        self._set_status_style("running")
+        self.status_label.setText(f"正在检测：{source_text}")
+        self.detail_label.setText("正在准备模型并启动检测，请稍候...")
+        QApplication.processEvents()
+
         if not self.ensure_model():
+            self._set_status_style("idle")
+            self.status_label.setText("状态：模型加载失败")
             return
 
         self.worker = VideoWorker(self.model, source, self.conf)
@@ -341,6 +528,11 @@ class MainWindow(QMainWindow):
         self.worker.error_ready.connect(self.show_error)
         self.worker.finished.connect(self.on_worker_finished)
         self.worker.start()
+
+        # 检测线程启动后更新为推理提示，等待第一帧结果返回。
+        self._set_status_style("running")
+        self.status_label.setText(f"正在检测：{source_text}")
+        self.detail_label.setText("模型正在推理，请稍候...")
 
         self.start_button.setEnabled(False)
         self.camera_button.setEnabled(False)
@@ -372,9 +564,9 @@ class MainWindow(QMainWindow):
         """刷新疲劳状态文本和报警颜色。"""
 
         if alarm:
-            self.status_label.setStyleSheet("font-size:18px;color:#b71c1c;font-weight:bold;")
+            self._set_status_style("alarm")
         else:
-            self.status_label.setStyleSheet("font-size:18px;color:#1b5e20;font-weight:bold;")
+            self._set_status_style("normal")
         self.status_label.setText(text)
         log_text = f"日志：{self.current_log_path}" if self.current_log_path else "日志：准备中"
         self.detail_label.setText(f"检测目标：{detection_text}    {log_text}")
