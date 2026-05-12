@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib.util
+import os
 import sys
 import time
 from datetime import datetime
@@ -26,6 +28,48 @@ from PyQt5.QtWidgets import (
 
 from src.utils.fatigue_rules import FatigueRuleEvaluator, feature_from_detections
 from src.utils.ultralytics_patches import register_attention_modules
+
+
+def configure_qt_runtime_paths() -> None:
+    """在导入 Qt 图形后端前补齐插件和运行库路径。
+
+    部分 Windows 环境下，用户把项目复制到新的目录后，PyQt5 虽然已经安装，
+    但 Qt 平台插件目录不会被自动发现，进而出现
+    “Could not find the Qt platform plugin 'windows'” 的报错。
+    这里根据当前 Python 环境中的 PyQt5 安装位置，主动设置插件目录和 DLL 搜索路径，
+    让桌面程序在交付包场景下更稳定。
+    """
+
+    pyqt_spec = importlib.util.find_spec("PyQt5")
+    if pyqt_spec is None or pyqt_spec.origin is None:
+        return
+
+    pyqt_dir = Path(pyqt_spec.origin).resolve().parent
+    plugin_dir = pyqt_dir / "Qt5" / "plugins"
+    platforms_dir = plugin_dir / "platforms"
+    qt_bin_dir = pyqt_dir / "Qt5" / "bin"
+
+    if platforms_dir.exists():
+        os.environ.setdefault("QT_QPA_PLATFORM_PLUGIN_PATH", str(platforms_dir))
+    if plugin_dir.exists():
+        os.environ.setdefault("QT_PLUGIN_PATH", str(plugin_dir))
+
+    # qwindows.dll 依赖的 Qt5Core/Qt5Gui 等 DLL 也需要能被系统找到，
+    # 因此把 Qt 自带 bin 目录放入 PATH 和 add_dll_directory 搜索范围。
+    if qt_bin_dir.exists():
+        current_path = os.environ.get("PATH", "")
+        qt_bin = str(qt_bin_dir)
+        if qt_bin not in current_path.split(os.pathsep):
+            os.environ["PATH"] = qt_bin + os.pathsep + current_path if current_path else qt_bin
+        if hasattr(os, "add_dll_directory"):
+            try:
+                os.add_dll_directory(qt_bin)
+            except OSError:
+                # 某些受限环境可能不允许重复或额外注册 DLL 目录，此时保留 PATH 即可。
+                pass
+
+
+configure_qt_runtime_paths()
 
 
 STATE_TEXT = {
