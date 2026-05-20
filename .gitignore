@@ -77,3 +77,8 @@ docs/thesis_revision_check_*_montage.jpg
 Thumbs.db
 Desktop.ini
 data.zip
+
+# 面向用户交付的压缩包体积可能超过 GitHub 100MB 限制，保留在本地，不纳入 Git 历史。
+code_with_dataset_package.zip
+release_package.zip
+fatigued_driving_program_models_dataset_*.zip
