@@ -46,6 +46,9 @@ slurm_logs/*
 docs/presentation_workspace/
 docs/thesis_render*/
 docs/thesis_render*_montage.png
+docs/docx_image_audit_*/
+docs/thesis_revision_check_*/
+docs/thesis_revision_check_*_montage.jpg
 *.onnx
 *.pt
 *.pth
