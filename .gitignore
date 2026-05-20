@@ -49,6 +49,8 @@ docs/thesis_render*_montage.png
 docs/docx_image_audit_*/
 docs/thesis_revision_check_*/
 docs/thesis_revision_check_*_montage.jpg
+docs/thesis_language_logic_check_*/
+docs/thesis_language_logic_check_*_montage.jpg
 *.onnx
 *.pt
 *.pth
