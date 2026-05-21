@@ -51,6 +51,8 @@ docs/thesis_revision_check_*/
 docs/thesis_revision_check_*_montage.jpg
 docs/thesis_language_logic_check_*/
 docs/thesis_language_logic_check_*_montage.jpg
+docs/thesis_fig_table_formula_check_*/
+docs/thesis_fig_table_formula_check_*_montage.jpg
 *.onnx
 *.pt
 *.pth
