@@ -11,20 +11,6 @@ from pathlib import Path
 from typing import List, Tuple
 
 import cv2
-from PyQt5.QtCore import QThread, Qt, pyqtSignal
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import (
-    QApplication,
-    QFileDialog,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QMainWindow,
-    QMessageBox,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
 
 from src.utils.fatigue_rules import FatigueRuleEvaluator, feature_from_detections
 from src.utils.ultralytics_patches import register_attention_modules
@@ -45,18 +31,23 @@ def configure_qt_runtime_paths() -> None:
         return
 
     pyqt_dir = Path(pyqt_spec.origin).resolve().parent
-    plugin_dir = pyqt_dir / "Qt5" / "plugins"
-    platforms_dir = plugin_dir / "platforms"
-    qt_bin_dir = pyqt_dir / "Qt5" / "bin"
+    qt_roots = [pyqt_dir / "Qt5", pyqt_dir / "Qt"]
+    plugin_dir = next((root / "plugins" for root in qt_roots if (root / "plugins" / "platforms").exists()), None)
+    platforms_dir = plugin_dir / "platforms" if plugin_dir is not None else None
+    qt_bin_dir = next((root / "bin" for root in qt_roots if (root / "bin").exists()), None)
 
-    if platforms_dir.exists():
-        os.environ.setdefault("QT_QPA_PLATFORM_PLUGIN_PATH", str(platforms_dir))
-    if plugin_dir.exists():
-        os.environ.setdefault("QT_PLUGIN_PATH", str(plugin_dir))
+    # 客户机器上 QT_QPA_PLATFORM_PLUGIN_PATH 可能已经存在但值为空字符串。
+    # setdefault 不会覆盖这种空值，因此这里显式判断并写入真实 platforms 目录。
+    if platforms_dir is not None and platforms_dir.exists():
+        if not os.environ.get("QT_QPA_PLATFORM_PLUGIN_PATH"):
+            os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = str(platforms_dir)
+    if plugin_dir is not None and plugin_dir.exists():
+        if not os.environ.get("QT_PLUGIN_PATH"):
+            os.environ["QT_PLUGIN_PATH"] = str(plugin_dir)
 
     # qwindows.dll 依赖的 Qt5Core/Qt5Gui 等 DLL 也需要能被系统找到，
     # 因此把 Qt 自带 bin 目录放入 PATH 和 add_dll_directory 搜索范围。
-    if qt_bin_dir.exists():
+    if qt_bin_dir is not None and qt_bin_dir.exists():
         current_path = os.environ.get("PATH", "")
         qt_bin = str(qt_bin_dir)
         if qt_bin not in current_path.split(os.pathsep):
@@ -70,6 +61,21 @@ def configure_qt_runtime_paths() -> None:
 
 
 configure_qt_runtime_paths()
+
+from PyQt5.QtCore import QThread, Qt, pyqtSignal
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 STATE_TEXT = {

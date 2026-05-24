@@ -66,6 +66,7 @@ docs/thesis_three_line_table_check_*.pdf
 docs/thesis_abstract_transition_check_*/
 docs/thesis_abstract_transition_check_*.pdf
 docs/_tmp_*.py
+docs/_tmp_*.docx
 docs/_tmp_thesis_content_for_template.docx
 *_参考文献修订前备份.docx
 ~$*
