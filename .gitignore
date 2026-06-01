@@ -44,6 +44,15 @@ slurm-*.out
 slurm_logs/*
 !slurm_logs/.gitkeep
 docs/presentation_workspace/
+outputs/*/presentations/*/slides/
+outputs/*/presentations/*/preview/
+outputs/*/presentations/*/layout/
+outputs/*/presentations/*/qa/
+outputs/*/presentations/*/node_modules/
+outputs/*/presentations/*/package.json
+outputs/*/presentations/*/*.txt
+outputs/*/presentations/*/output/artifact-build-manifest.json
+outputs/fatigue-defense-ppt/
 docs/thesis_render*/
 docs/thesis_render*_montage.png
 docs/docx_image_audit_*/

@@ -66,6 +66,8 @@
 - 更新 `.gitignore`，忽略附件模板转换产生的 `docs/_tmp_*.docx` 临时文件。
 - 按附录2要求将 `基于 YOLOv8 与注意力机制的疲劳驾驶面部识别系统0523_改写.docx` 末尾“部分源程序”占位内容替换为核心代码节选，覆盖疲劳规则判断、YOLOv8 单帧推理和桌面系统帧处理逻辑；重新导出同名 PDF，当前 Word 统计页数为 43 页。
 - 修复客户机器运行 `python -m src.app.main_window` 时 Qt 找不到 `windows` 平台插件的问题：在导入 PyQt5 图形模块前设置 Qt 插件路径，并兼容空的 `QT_QPA_PLATFORM_PLUGIN_PATH` 环境变量。
+- 使用 Presentations 插件生成 12 页本科毕业设计答辩 PPT，输出文件为 `outputs/manual/presentations/fatigue-defense-ppt/output/基于YOLOv8与CBAM的疲劳驾驶面部识别系统答辩PPT.pptx`；已通过 artifact-tool 渲染预览和接触图检查。
+- 更新 `.gitignore`，忽略 Presentations 工作区中的 slides、preview、layout、qa、node_modules 等构建/检查产物，保留 output 目录中的最终 PPTX。
 
 ## Next TODO
 
