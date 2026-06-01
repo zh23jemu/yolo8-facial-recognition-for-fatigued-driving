@@ -62,7 +62,7 @@ def configure_qt_runtime_paths() -> None:
 
 configure_qt_runtime_paths()
 
-from PyQt5.QtCore import QThread, Qt, pyqtSignal
+from PyQt5.QtCore import QPoint, QThread, QTimer, Qt, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (
     QApplication,
@@ -92,6 +92,10 @@ QWidget#appRoot {
     background: #eef2f5;
     color: #17212b;
     font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+}
+
+QWidget#appRoot[alarm="true"] {
+    background: #fff1f2;
 }
 
 QLabel#titleLabel {
@@ -124,6 +128,11 @@ QFrame#statusFrame {
     background: #ffffff;
     border: 1px solid #d9e2ea;
     border-radius: 10px;
+}
+
+QFrame#statusFrame[alarm="true"] {
+    background: #fff7f7;
+    border: 2px solid #dc2626;
 }
 
 QLabel#statusLabel {
@@ -405,6 +414,21 @@ class MainWindow(QMainWindow):
         self.media_path: str | None = None
         self.latest_frame = None
         self.current_log_path: str | None = None
+        self.is_alarm_active = False
+        self._alarm_shake_origin: QPoint | None = None
+        self._alarm_shake_index = 0
+        self._alarm_shake_offsets = [
+            QPoint(-12, 0),
+            QPoint(12, 0),
+            QPoint(-9, 0),
+            QPoint(9, 0),
+            QPoint(-5, 0),
+            QPoint(5, 0),
+            QPoint(0, 0),
+        ]
+        self._alarm_shake_timer = QTimer(self)
+        self._alarm_shake_timer.setInterval(35)
+        self._alarm_shake_timer.timeout.connect(self._run_alarm_shake_step)
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -445,14 +469,14 @@ class MainWindow(QMainWindow):
         self.detail_label.setObjectName("detailLabel")
         self.detail_label.setWordWrap(True)
 
-        status_frame = QFrame()
-        status_frame.setObjectName("statusFrame")
+        self.status_frame = QFrame()
+        self.status_frame.setObjectName("statusFrame")
         status_layout = QVBoxLayout()
         status_layout.setContentsMargins(18, 14, 18, 14)
         status_layout.setSpacing(8)
         status_layout.addWidget(self.status_label)
         status_layout.addWidget(self.detail_label)
-        status_frame.setLayout(status_layout)
+        self.status_frame.setLayout(status_layout)
 
         self.select_button = QPushButton("选择图片/视频")
         self.camera_button = QPushButton("打开摄像头")
@@ -486,15 +510,16 @@ class MainWindow(QMainWindow):
         layout.setSpacing(18)
         layout.addLayout(header_layout)
         layout.addWidget(video_frame)
-        layout.addWidget(status_frame)
+        layout.addWidget(self.status_frame)
         layout.addLayout(button_layout)
 
-        container = QWidget()
-        container.setObjectName("appRoot")
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+        self.app_container = QWidget()
+        self.app_container.setObjectName("appRoot")
+        self.app_container.setLayout(layout)
+        self.setCentralWidget(self.app_container)
         self.setStyleSheet(APP_STYLESHEET)
         self._set_status_style("idle")
+        self._set_alarm_visual(False)
 
     def _set_status_style(self, status: str) -> None:
         """按检测状态切换状态栏视觉样式。
@@ -505,6 +530,66 @@ class MainWindow(QMainWindow):
         self.status_label.setProperty("status", status)
         self.status_label.style().unpolish(self.status_label)
         self.status_label.style().polish(self.status_label)
+
+    def _refresh_dynamic_style(self, widget: QWidget) -> None:
+        """刷新使用动态属性控制的 Qt 样式。"""
+
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
+
+    def _set_alarm_visual(self, active: bool) -> None:
+        """切换疲劳报警的主界面颜色。
+
+        报警状态只改变主容器和状态区域的动态属性，具体颜色仍集中在
+        APP_STYLESHEET 中维护，避免在业务回调里拼接样式字符串。
+        """
+
+        alarm_value = "true" if active else "false"
+        self.app_container.setProperty("alarm", alarm_value)
+        self.status_frame.setProperty("alarm", alarm_value)
+        self._refresh_dynamic_style(self.app_container)
+        self._refresh_dynamic_style(self.status_frame)
+
+    def _reset_alarm_state(self) -> None:
+        """恢复非报警状态，并确保抖动动画停在原始窗口位置。"""
+
+        self.is_alarm_active = False
+        self._set_alarm_visual(False)
+        if self._alarm_shake_timer.isActive():
+            self._alarm_shake_timer.stop()
+        if self._alarm_shake_origin is not None:
+            self.move(self._alarm_shake_origin)
+            self._alarm_shake_origin = None
+
+    def _trigger_alarm_effect(self) -> None:
+        """触发一次疲劳报警窗口抖动。
+
+        持续疲劳期间不会重复调用本函数；只有从非疲劳进入疲劳时，
+        update_status 才会触发一次，避免窗口长时间晃动影响操作。
+        """
+
+        if self.isMaximized() or self.isFullScreen():
+            return
+        if self._alarm_shake_timer.isActive():
+            return
+        self._alarm_shake_origin = self.pos()
+        self._alarm_shake_index = 0
+        self._alarm_shake_timer.start()
+
+    def _run_alarm_shake_step(self) -> None:
+        """按预设偏移量执行一次窗口抖动动画步骤。"""
+
+        if self._alarm_shake_origin is None:
+            self._alarm_shake_timer.stop()
+            return
+        if self._alarm_shake_index >= len(self._alarm_shake_offsets):
+            self._alarm_shake_timer.stop()
+            self.move(self._alarm_shake_origin)
+            self._alarm_shake_origin = None
+            return
+
+        self.move(self._alarm_shake_origin + self._alarm_shake_offsets[self._alarm_shake_index])
+        self._alarm_shake_index += 1
 
     def ensure_model(self) -> bool:
         """按需加载模型，避免程序启动时因未准备权重而直接退出。"""
@@ -561,6 +646,7 @@ class MainWindow(QMainWindow):
         # 因此先把“正在检测/准备模型”的提示显示出来，并立即刷新事件循环，
         # 避免用户误以为选择图片后没有响应。
         source_text = "摄像头" if isinstance(source, int) else str(source)
+        self._reset_alarm_state()
         self._set_status_style("running")
         self.status_label.setText(f"正在检测：{source_text}")
         self.detail_label.setText("正在准备模型并启动检测，请稍候...")
@@ -597,6 +683,7 @@ class MainWindow(QMainWindow):
             self.worker.stop()
             self.worker.wait(2000)
         self.on_worker_finished()
+        self._reset_alarm_state()
 
     def update_frame(self, frame) -> None:
         """刷新视频画面。"""
@@ -614,8 +701,14 @@ class MainWindow(QMainWindow):
         """刷新疲劳状态文本和报警颜色。"""
 
         if alarm:
+            if not self.is_alarm_active:
+                self._trigger_alarm_effect()
+            self.is_alarm_active = True
+            self._set_alarm_visual(True)
             self._set_status_style("alarm")
         else:
+            self.is_alarm_active = False
+            self._set_alarm_visual(False)
             self._set_status_style("normal")
         self.status_label.setText(text)
         log_text = f"日志：{self.current_log_path}" if self.current_log_path else "日志：准备中"

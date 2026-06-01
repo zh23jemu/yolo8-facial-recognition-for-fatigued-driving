@@ -29,7 +29,7 @@
 
 ## Current Status
 
-已基于学校模板版论文生成按新意见修订稿，完成摘要、关键词、第一章至第六章、结论与展望、参考文献对应关系、表格排版、正文中英文多余空格清理，并按模板要求将论文表格调整为三线表。
+已基于学校模板版论文生成按新意见修订稿，完成摘要、关键词、第一章至第六章、结论与展望、参考文献对应关系、表格排版、正文中英文多余空格清理，并按模板要求将论文表格调整为三线表；桌面演示系统已支持疲劳识别后的窗口抖动与红色视觉报警。
 
 ## Recent Changes
 
@@ -68,6 +68,7 @@
 - 修复客户机器运行 `python -m src.app.main_window` 时 Qt 找不到 `windows` 平台插件的问题：在导入 PyQt5 图形模块前设置 Qt 插件路径，并兼容空的 `QT_QPA_PLATFORM_PLUGIN_PATH` 环境变量。
 - 使用 Presentations 插件生成 12 页本科毕业设计答辩 PPT，输出文件为 `outputs/manual/presentations/fatigue-defense-ppt/output/基于YOLOv8与CBAM的疲劳驾驶面部识别系统答辩PPT.pptx`；已通过 artifact-tool 渲染预览和接触图检查。
 - 更新 `.gitignore`，忽略 Presentations 工作区中的 slides、preview、layout、qa、node_modules 等构建/检查产物，保留 output 目录中的最终 PPTX。
+- 为 PyQt5 桌面演示程序新增疲劳视觉报警机制：当检测状态从非疲劳进入疲劳时窗口短暂抖动一次，并在持续疲劳期间保持主界面和状态区域红色报警样式。
 
 ## Next TODO
 
